@@ -26,30 +26,36 @@ template <template <template <typename> typename> typename T> struct Type_SOAPtr
 template <template <template <typename> typename> typename T>
 struct Type_Ref : public T<__Type_Helpers::ref_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
+
     Type_Ref(const T<__Type_Helpers::ref_wrapper>& obj) : T<__Type_Helpers::ref_wrapper>(obj) {}
     Type_Ref(const Type_Ref<T>&) = default;
     Type_Ref() = default;
 
     auto get_ref(std::size_t = 0) { return *this; }
-    auto get_ref(std::size_t = 0) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::ref_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this); };
-    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::ref_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };
+    auto get_ref(std::size_t = 0) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::ref_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this); };
+    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::ref_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };
 };
 
 template <template <template <typename> typename> typename T>
 struct Type_ConstRef : public T<__Type_Helpers::constref_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
+
     Type_ConstRef(const T<__Type_Helpers::ref_wrapper>& obj) : T<__Type_Helpers::constref_wrapper>(((const Type_Ref<T>)Type_Ref<T>(obj)).get_ref()) {}
     Type_ConstRef(const T<__Type_Helpers::constref_wrapper>& obj) : T<__Type_Helpers::constref_wrapper>(obj) {}
     Type_ConstRef(const Type_ConstRef<T>&) = default;
     Type_ConstRef() = default;
 
     auto get_ref(std::size_t = 0) const { return *this; }
-    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::constref_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };
+    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::constref_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };
 };
 
 template <template <template <typename> typename> typename T>
 struct Type_SOAPtr : public T<__Type_Helpers::soaptr_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
+
     Type_SOAPtr(const T<__Type_Helpers::soaptr_wrapper>& obj) : T<__Type_Helpers::soaptr_wrapper>(obj) {}
     Type_SOAPtr(const Type_SOAPtr<T>&) = default;
     Type_SOAPtr() = default;
@@ -58,39 +64,43 @@ struct Type_SOAPtr : public T<__Type_Helpers::soaptr_wrapper>
 template <template <template <typename> typename> typename T>
 struct Type_Plain : public T<__Type_Helpers::plain_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
+
     Type_Plain(const T<__Type_Helpers::plain_wrapper>& obj) : T<__Type_Helpers::plain_wrapper>(obj) {}
     Type_Plain(const Type_Plain<T>&) = default;
     Type_Plain() = default;
 
-    auto get_ref(std::size_t = 0) { return __Type_Helpers::SOA_convert<T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this); };
-    auto get_ref(std::size_t = 0) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this); };
-    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };    
+    auto get_ref(std::size_t = 0) { return __Type_Helpers::SOA_convert<M, T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this); };
+    auto get_ref(std::size_t = 0) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this); };
+    auto get_copy(std::size_t = 0) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::plain_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this); };    
 };
 
 template <template <template <typename> typename> typename T, std::size_t N>
 struct Type_SOA : public T<__Type_Helpers::soa_array<N>::template soa_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
     Type_Ref<T> operator[](std::size_t idx) { return get_ref(idx); }
     Type_ConstRef<T> operator[](std::size_t idx) const { return get_ref(idx); }
 
-    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
-    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
-    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
-    auto get_ptrs() { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
+    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<M, T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
+    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
+    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
+    auto get_ptrs() { return __Type_Helpers::SOA_convert<M, T<__Type_Helpers::soa_array<N>::template soa_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
 };
 
 template <template <template <typename> typename> typename T>
 struct Type_SOA_v : public T<__Type_Helpers::template soaptr_wrapper> // TODO: Implement the same for Type_AOS_v
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>();
     Type_SOA_v(std::size_t v) : N(v) {} // TODO: implement constructor to allocate N elements
     Type_SOA_v(const Type_SOA_v&) = default;
     Type_Ref<T> operator[](std::size_t idx) { return get_ref(idx); }
     Type_ConstRef<T> operator[](std::size_t idx) const { return get_ref(idx); }
 
-    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
-    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
-    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
-    auto get_ptrs() { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
+    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<M, T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
+    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
+    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
+    auto get_ptrs() { return __Type_Helpers::SOA_convert<M, T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
 private:
     std::size_t N;
 };
@@ -98,6 +108,7 @@ private:
 template <template <template <typename> typename> typename T> // TODO: need a similar class for Type_SOA_s
 struct Type_SOA_s : public T<__Type_Helpers::template soaptr_wrapper> // TODO: Implement the same for Type_AOS_s
 {
+    constexpr static std::size_t MM = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>(); 
     template <size_t M>
     Type_SOA_s(Type_SOA<T, M>& array, std::size_t offset = 0, std::size_t size = -1) {(void)array;(void)offset;(void)size;} // TODO: implement constructors to point to corresponding part of Type_SOA selected by offset/size (-1 = till the end)
     Type_SOA_s(Type_SOA_v<T>& vector, std::size_t offset = 0, std::size_t size = -1) {(void)vector;(void)offset;(void)size;} // Same for vector instead of array
@@ -105,10 +116,10 @@ struct Type_SOA_s : public T<__Type_Helpers::template soaptr_wrapper> // TODO: I
     Type_Ref<T> operator[](std::size_t idx) { return get_ref(idx); }
     Type_ConstRef<T> operator[](std::size_t idx) const { return get_ref(idx); }
 
-    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
-    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
-    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
-    auto get_ptrs() { return __Type_Helpers::SOA_convert<T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
+    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<MM, T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::ref_wrapper>>(*this, idx); };
+    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<MM, const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::constref_wrapper>>(*this, idx); };
+    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<MM, const T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::plain_wrapper>>(*this, idx); };
+    auto get_ptrs() { return __Type_Helpers::SOA_convert<MM, T<__Type_Helpers::soaptr_wrapper>, T<__Type_Helpers::soaptr_wrapper>>(*this); };
 private:
     std::size_t N;
 };
@@ -116,15 +127,16 @@ private:
 template <template <template <typename> typename> typename T, std::size_t N>
 struct Type_AOS : public T<__Type_Helpers::array_helper<T>::template array_type_wrapper>
 {
+    constexpr static std::size_t M = __Type_Helpers::MemberCounter<T<__Type_Helpers::plain_wrapper>>(); 
     Type_AOS() : T<__Type_Helpers::array_helper<T>::template array_type_wrapper>(get_arrays()) {
 
     }
     auto& operator[](std::size_t idx) { return values[idx]; }
     const auto& operator[](std::size_t idx) const { return values[idx]; }
 
-    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<decltype(values[idx]), T<__Type_Helpers::ref_wrapper>>(values[idx]); };
-    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<decltype(values[idx]), T<__Type_Helpers::constref_wrapper>>(values[idx]); };
-    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<decltype(values[idx]), T<__Type_Helpers::plain_wrapper>>(values[idx]); };
+    auto get_ref(std::size_t idx) { return __Type_Helpers::SOA_convert<M, decltype(values[idx]), T<__Type_Helpers::ref_wrapper>>(values[idx]); };
+    auto get_ref(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, decltype(values[idx]), T<__Type_Helpers::constref_wrapper>>(values[idx]); };
+    auto get_copy(std::size_t idx) const { return __Type_Helpers::SOA_convert<M, decltype(values[idx]), T<__Type_Helpers::plain_wrapper>>(values[idx]); };
 
     template <typename S>
     auto get_array_ptr(S T<__Type_Helpers::plain_wrapper>::*p) {
@@ -157,9 +169,31 @@ SOASTRUCT() struct point_d
 typedef Type_Plain<point_d> point;
 
 // Usage
+struct Test {
+    int x;
+    float y;
+    sub_point z;
+};
+
+struct TestRef {
+    int& x;
+    float& y;
+    sub_point& z;
+};
 
 int main(int, char**)
 {
+    int x = 0;
+    float y = 1.0;
+    sub_point z{2, 3};
+    Test bla{x, y, z};
+    //const point_d<__Type_Helpers::ref_wrapper> bla{x, y, z};
+    //static_assert(std::is_same<typename helper::detail::enable_if_helper<decltype(bla), S, 3>::type, S>::value);
+    // auto id = [](auto& member) -> decltype(auto) { return member; };
+    // TestRef foo = __Type_Helpers::apply_to_members<Test, TestRef>(bla, id);
+
+
+
     // TODO: We need to overwrite the constructors, to either take a custom allocator function, or to create in place in existing memory like placement-new
     Type_SOA<point_d, 10> p_soa;
     Type_AOS<point_d, 10> p_aos;
