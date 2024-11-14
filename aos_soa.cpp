@@ -199,8 +199,8 @@ int main(int, char**)
     Type_SOA_s<point_d> p_soa_s_placement2(10, buffers.data(), false, nullptr); // Here for individual buffers per member (only SOA, not AOS)
 
     // And some creation of vectors with allocation
-    // Type_SOA_v<point_d, std::allocator<T>, continuous> p_soa_allocated1; // For vectors, we can provide an allocator
-    // Type_SOA_v<point_d, std::allocator<T>, per_member> p_soa_allocated2;
+    // Type_SOA_v<point_d, std::allocator<T>, continuous, true> p_soa_allocated1; // For vectors, we can provide an allocator
+    // Type_SOA_v<point_d, std::allocator<T>, per_member, false> p_soa_allocated2; // true / false for running constructor, giving uninitialized memory. In ALICE I explicitly created a std::vector variant to give uninitialized memory explcitly.
 
     // Play around with getting copies of objects and references
     point p_plain;
