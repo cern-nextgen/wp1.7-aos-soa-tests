@@ -86,3 +86,8 @@ In my current implementation, `p_soa[5]` and `p_aos[5]` have different types, ev
 - I think we should support nested structures. SoAoS in case some parameters are always used together, e.g. x and y coordinates. And AoSoA to store things in columnar way for vector access, but keep some cache locality.
 - I suppose AoSoA should be straigt forward to do, with an array of SoA and some magic for the access operators. We should make sure that `for ( auto& : ...)` loops work efficiently.
 - SoAoS is more complicated: Do we want to define the struct substructure when defining the variable, or could it be part of the skelleton class definition? Perhaps it is easiest to start with the latter as done here https://github.com/davidrohr/soa_aos_tests/blob/352405f771e7100c3a0409777d636a2ce3179cc8/aos_soa.cpp#L207, which works transparently.
+
+# std::vector behavior
+- If we have the templated feature in Oliver's current approach, to pass in std::vector / std::array / std::span, that is really nice. Then I'd e.g. like to be able to to emplace_back in the std::vector versions.
+- I'd really like to have also a fixed size version a'la std::array. For this one has to make sure to be able to propagate through additional template parameters, like the array size.
+- In case we use std::vector in an soa, all the members will be std::vector<something> and they are public members, so the user can in principle do `soa.some_member.emplace_back(...)`, which will make the vector sizes go out of sync. That is not so nice, but I guess we cannot avoid it.
