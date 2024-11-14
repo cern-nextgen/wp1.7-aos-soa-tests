@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <tuple>
 #include <utility>
+#include <stdexcept>
+#include <vector>
 
 // Helper code
 
@@ -102,6 +104,8 @@ struct Type_SOA_s : public T<__Type_Helpers::template soaptr_wrapper> // TODO: I
     Type_SOA_s(Type_SOA<T, M>& array, std::size_t offset = 0, std::size_t size = -1) {(void)array;(void)offset;(void)size;} // TODO: implement constructors to point to corresponding part of Type_SOA selected by offset/size (-1 = till the end)
     Type_SOA_s(Type_SOA_v<T>& vector, std::size_t offset = 0, std::size_t size = -1) {(void)vector;(void)offset;(void)size;} // Same for vector instead of array
     Type_SOA_s(const Type_SOA_s&) = default;
+    Type_SOA_s(std::size_t size, void* buffer, bool placement_new = false, std::size_t bufferSize = -1) : N(size) { if (bufferSize != (std::size_t)-1 && N * sizeof(T<__Type_Helpers::plain_wrapper>) > bufferSize) throw std::runtime_error("buffer too small"); (void)buffer; if (placement_new) {}}
+    Type_SOA_s(std::size_t size, void** buffer, bool placement_new = false, std::size_t* bufferSize = nullptr) : N(size) { if (bufferSize != nullptr) (void)buffer; if (placement_new) {}}
     Type_Ref<T> operator[](std::size_t idx) { return get_ref(idx); }
     Type_ConstRef<T> operator[](std::size_t idx) const { return get_ref(idx); }
 
@@ -141,6 +145,22 @@ private:
 
 };
 
+// Helpers to automatically derive the right span class
+
+// TODO: Right now this is just an empty class, can we make that become Type_AOS_s or Type_SOA_s depending on the constructor argument?
+template <template <template <typename> typename> typename T, template <template <template <typename> typename> typename> typename S>
+class Type_span {
+public:
+    template <typename...> struct span_class;
+    template <> struct span_class<Type_AOS_v<T>> { using type = Type_AOS_s<T>; };
+    template <> struct span_class<Type_SOA_v<T>> { using type = Type_SOA_s<T>; };
+
+    Type_span(S<T>& ref, std::size_t offset = 0, std::size_t size = -1) : real_class(ref, offset, size) {}
+    span_class<S<T>>::type real_class;
+};
+
+// TODO: In general, we need to overwrite the constructors, to either take a custom allocator function, or to create in place in existing memory like placement-new
+
 // Type definition
 
 struct sub_point // TODO: what do we do for nested SoAoS?
@@ -160,11 +180,29 @@ typedef Type_Plain<point_d> point;
 
 int main(int, char**)
 {
-    // TODO: We need to overwrite the constructors, to either take a custom allocator function, or to create in place in existing memory like placement-new
+    // Define some AOS / SOA vectors
     Type_SOA<point_d, 10> p_soa;
     Type_AOS<point_d, 10> p_aos;
     Type_SOA_v<point_d> p_soa_vector(10);
+    // Type_AOS_v<point_d> p_aos_vector(10); // Todo: Type_AOS_v not yet implemented
+
+    // Get some spans from the vectors
     Type_SOA_s<point_d> p_soa_span1(p_soa, 5, 3), p_soa_span2(p_soa_vector, 2, -1);
+    Type_span autospan_from_soa(p_soa_vector); // Type_span should automatically derrive if soa/aos
+    // Type_span<point_d, Type_AOS_v> autospan_from_aos(p_aos_v); // Todo: Type_AOS_v not yet implemented
+    // Type_span<point_d, Type_AOS> autospan_from_aos_array_with_template_N(p_aos); // Todo: The same for array types with template parameter N, gets a bit tricky to deduce N automatically
+
+    // Create objects from preallocated memory, or with allocators
+    std::vector<char> buffer(1024 * 1024);
+    Type_SOA_s<point_d> p_soa_s_placement(10 /*size of our vector*/, buffer.data() /*existing buiffer*/, true /*run placement new constructor*/, buffer.size() /*buffer size for checks, optional*/);
+    std::array<void*, 10> buffers;
+    Type_SOA_s<point_d> p_soa_s_placement2(10, buffers.data(), false, nullptr); // Here for individual buffers per member (only SOA, not AOS)
+
+    // And some creation of vectors with allocation
+    // Type_SOA_v<point_d, std::allocator<T>, continuous> p_soa_allocated1; // For vectors, we can provide an allocator
+    // Type_SOA_v<point_d, std::allocator<T>, per_member> p_soa_allocated2;
+
+    // Play around with getting copies of objects and references
     point p_plain;
 
     p_soa.x[1] = 10;
