@@ -8,6 +8,7 @@ I would consider the following cases:
 - Just a normal constructor.
 - The possibility to provide an allocator, and be compatible with c++ memory resources
 - A possibility to use preallocated memory. For this, we should also provide statig getters, that tell us how a large an soa or aos with n entries of struct X would be, including potential alignment.
+$\color{blue}{\textsf{In wp1.7-soa-wrapper we can now use both custom allocators and preallocated memory, see the file factory.h. The class wrapper<...> does not have any constructors. Instead we currently create instances of wrapper<...> only via factory functions. The reason is that the possible constructors would contain a lot of logic and dependecies, and I don't want to include them with every include of wrapper.h.}}$
 
 # Default values
 - It would be good if we could define default values for the constructor in C++11 style (https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L205).
@@ -15,10 +16,12 @@ I would consider the following cases:
 
 # Create uninitialized
 - It might make sense to foresee a way to create an soa/aos without initializing the data, if the user knows he will anyway write to all of them. Then we can skip the initialialization explicitly.
+$\color{blue}{\textsf{In wp1.7-soa-wrapper this is delegated to the underlying container (e.g. std::vector). If the container can exists without initializing the data it manages, then our wrapper of this container can do so as well.}}$
 
 # A general problem is how to do the conversion, which I currently attempted with structured binding, but for this we need the count.
 - See https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L31
 - One can count with some template magic in c++17, like in https://gist.github.com/utilForever/1a058050b8af3ef46b58bcfa01d5375d, with c++20 the counting can be improved: https://stackoverflow.com/questions/4024632/how-to-get-the-number-of-elements-in-a-struct. And obviously with reflection, this can be solved. But meanwhile we should find the smoothest temporary solution.
+$\color{blue}{\textsf{I have implemented both the c++17 and the c++20 version in wp1.7-soa-wrapper. The latter has a bug when compiled with nvcc, but the former is fully supported by CUDA/nvcc.}}$
 
 # Compile time
 - If we use a lot of template code, we must make sure that the compile time and memory consumption does not grow out of control, and that we get reasonable error message in case of incorrect usage by the user.
@@ -28,10 +31,13 @@ I would consider the following cases:
 - I think it will be really important to have `span` types, which point to a subregion of an aos / soa meta type.
 - I added some tentative interface here: https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L154
 - We should have constructors so we can easily create a span from any aos / soa type selecting a range, and obviously it needs to work with const / non-const / etc. objects, automatically obtaining the corresponding span.
+$\color{blue}{\textsf{We can use std::span with wrapper<...> of wp1.7-soa-wrapper and there is a unit test for this case.}}$
 
 # Which metatypes do we want to provide in the end. In my example I added a couple of types for special cases.
 - https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L22: `span` types like `Type_AOS_s` will probably be needed in 2 flavors, referencing to const objects and non-const objects?
 - https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L23: In order to support data from external arrays, a pure pointer type without size might be helpful, since perhaps we do not know the size of the AOS/SOD in every case: https://github.com/davidrohr/soa_aos_tests/blob/f12c3f63535e653d500fb1ea46527ee7d22f7d9a/aos_soa.cpp#L23
+$\color{blue}{\textsf{The class wrapper<...> of wp1.7-soa-wrapper can handle raw arrays. The operator[] of this class can return references to const and non-const objects.}}$
+$\color{red}{\textsf{TODO: Add unit test for raw array.}}$
 
 # Alignment
 - In cases where we create the memory layout for our soa/aos metaobject ourselves, we should have the possibility to define some alignment constraints.
@@ -46,7 +52,7 @@ I would consider the following cases:
 - I did not manage to apply the above hack for structured binding with counting to this case. Is there a template metaprogramming solution, or does it require reflection?
 
 # Member functions:
-- I thought a bit about member functions. Ideally, I would of course simply define then in the skelleton struct.
+- I thought a bit about member functions. Ideally, I would of course simply define then in the skelleton struct. $\color{blue}{\textsf{That is exactly how I implement memeber functions in wp1.7-soa-wrapper and it works.}}$
 - But the question is actually, what happens if I call the member function on an soa/aos? Would it apply the function on all elements of the array? Perhaps this is not really needed.
 - I think what is more relevant is to have member functions for the plain struct and the struct of references. Actually for these two, just defining the member functions insite the skelleton class in my above example would work. But it would simply not even compile for the soa / aos classes.
 - One workaround would be to have the skelleton class only for the members, and then derrive a class that adds the functions, e.g.
